@@ -139,7 +139,7 @@ namespace MarcZen
             }
         }
 
-        // Search button click
+        // vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvch button click
         private void btnSearch_Click(object sender, EventArgs e)
         {
             string selectedFilter = comboBoxFilter.SelectedItem?.ToString() ?? "All";

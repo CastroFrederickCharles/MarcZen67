@@ -4,7 +4,7 @@ using System.Data;
 using System.Data.SqlClient;
 using System.Windows.Forms;
 
-namespace MarcZen // Replace with your actual namespace
+namespace MarcZen
 {
     public class DatabaseHelper
     {
@@ -33,7 +33,8 @@ namespace MarcZen // Replace with your actual namespace
             }
         }
 
-        // Insert maintenance record
+        // ==================== MAINTENANCE METHODS ====================
+
         public bool InsertMaintenanceRecord(DateTime date, string description, string vehicle,
             string contactNumber, decimal material, decimal labor, decimal other)
         {
@@ -71,23 +72,22 @@ namespace MarcZen // Replace with your actual namespace
             }
         }
 
-        // Load all maintenance records
         public DataTable LoadMaintenanceRecords()
         {
             try
             {
                 string query = @"SELECT 
-                    MaintenanceID,
-                    FORMAT(Date, 'MM/dd/yy') AS Date,
-                    MaintenanceDescription AS [Maintenance Description],
-                    Vehicle,
-                    ContactNumber AS [Contact Number],
-                    Material,
-                    Labor,
-                    OtherCost AS Other,
-                    Total
-                   FROM Maintenance
-                   ORDER BY Date DESC, CreatedDate DESC";
+                                MaintenanceID,
+                                FORMAT(Date, 'MM/dd/yy') AS Date,
+                                MaintenanceDescription AS [Maintenance Description],
+                                Vehicle,
+                                ContactNumber AS [Contact Number],
+                                Material,
+                                Labor,
+                                OtherCost AS Other,
+                                Total
+                               FROM Maintenance
+                               ORDER BY Date DESC, CreatedDate DESC";
 
                 using (SqlConnection conn = new SqlConnection(connectionString))
                 {
@@ -102,6 +102,187 @@ namespace MarcZen // Replace with your actual namespace
             catch (Exception ex)
             {
                 MessageBox.Show("Error loading records: " + ex.Message, "Database Error");
+                return new DataTable();
+            }
+        }
+
+        // ==================== INVENTORY METHODS ====================
+
+        // Load all inventory items
+        public DataTable LoadInventory(string filterType = "All")
+        {
+            try
+            {
+                string query = @"SELECT 
+                                InventoryID,
+                                CarBrand,
+                                CarModel,
+                                CarType,
+                                Year,
+                                Color,
+                                PlateNumber,
+                                DailyRate,
+                                Status,
+                                ImagePath
+                               FROM Inventory";
+
+                if (filterType != "All")
+                {
+                    query += " WHERE CarType = @FilterType";
+                }
+
+                query += " ORDER BY CarBrand, CarModel";
+
+                using (SqlConnection conn = new SqlConnection(connectionString))
+                {
+                    using (SqlDataAdapter adapter = new SqlDataAdapter(query, conn))
+                    {
+                        if (filterType != "All")
+                        {
+                            adapter.SelectCommand.Parameters.AddWithValue("@FilterType", filterType);
+                        }
+
+                        DataTable dt = new DataTable();
+                        adapter.Fill(dt);
+                        return dt;
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show("Error loading inventory: " + ex.Message, "Database Error");
+                return new DataTable();
+            }
+        }
+
+        // Insert new inventory item
+        public bool InsertInventoryItem(string brand, string model, string type, int year,
+            string color, string plateNumber, decimal dailyRate, string status, string imagePath)
+        {
+            try
+            {
+                string query = @"INSERT INTO Inventory 
+                               (CarBrand, CarModel, CarType, Year, Color, PlateNumber, DailyRate, Status, ImagePath)
+                               VALUES (@Brand, @Model, @Type, @Year, @Color, @PlateNumber, @DailyRate, @Status, @ImagePath)";
+
+                using (SqlConnection conn = new SqlConnection(connectionString))
+                {
+                    using (SqlCommand cmd = new SqlCommand(query, conn))
+                    {
+                        cmd.Parameters.AddWithValue("@Brand", brand);
+                        cmd.Parameters.AddWithValue("@Model", model);
+                        cmd.Parameters.AddWithValue("@Type", type ?? "");
+                        cmd.Parameters.AddWithValue("@Year", year);
+                        cmd.Parameters.AddWithValue("@Color", color ?? "");
+                        cmd.Parameters.AddWithValue("@PlateNumber", plateNumber);
+                        cmd.Parameters.AddWithValue("@DailyRate", dailyRate);
+                        cmd.Parameters.AddWithValue("@Status", status);
+                        cmd.Parameters.AddWithValue("@ImagePath", imagePath ?? "");
+
+                        conn.Open();
+                        cmd.ExecuteNonQuery();
+                        return true;
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show("Error inserting inventory item: " + ex.Message, "Database Error");
+                return false;
+            }
+        }
+
+        // Update inventory item
+        public bool UpdateInventoryItem(int inventoryId, string brand, string model, string type,
+            int year, string color, string plateNumber, decimal dailyRate, string status, string imagePath)
+        {
+            try
+            {
+                string query = @"UPDATE Inventory SET 
+                               CarBrand = @Brand,
+                               CarModel = @Model,
+                               CarType = @Type,
+                               Year = @Year,
+                               Color = @Color,
+                               PlateNumber = @PlateNumber,
+                               DailyRate = @DailyRate,
+                               Status = @Status,
+                               ImagePath = @ImagePath
+                               WHERE InventoryID = @ID";
+
+                using (SqlConnection conn = new SqlConnection(connectionString))
+                {
+                    using (SqlCommand cmd = new SqlCommand(query, conn))
+                    {
+                        cmd.Parameters.AddWithValue("@ID", inventoryId);
+                        cmd.Parameters.AddWithValue("@Brand", brand);
+                        cmd.Parameters.AddWithValue("@Model", model);
+                        cmd.Parameters.AddWithValue("@Type", type ?? "");
+                        cmd.Parameters.AddWithValue("@Year", year);
+                        cmd.Parameters.AddWithValue("@Color", color ?? "");
+                        cmd.Parameters.AddWithValue("@PlateNumber", plateNumber);
+                        cmd.Parameters.AddWithValue("@DailyRate", dailyRate);
+                        cmd.Parameters.AddWithValue("@Status", status);
+                        cmd.Parameters.AddWithValue("@ImagePath", imagePath ?? "");
+
+                        conn.Open();
+                        cmd.ExecuteNonQuery();
+                        return true;
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show("Error updating inventory item: " + ex.Message, "Database Error");
+                return false;
+            }
+        }
+
+        // Delete inventory item
+        public bool DeleteInventoryItem(int inventoryId)
+        {
+            try
+            {
+                string query = "DELETE FROM Inventory WHERE InventoryID = @ID";
+
+                using (SqlConnection conn = new SqlConnection(connectionString))
+                {
+                    using (SqlCommand cmd = new SqlCommand(query, conn))
+                    {
+                        cmd.Parameters.AddWithValue("@ID", inventoryId);
+                        conn.Open();
+                        cmd.ExecuteNonQuery();
+                        return true;
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show("Error deleting inventory item: " + ex.Message, "Database Error");
+                return false;
+            }
+        }
+
+        // Get car types for filter dropdown
+        public DataTable GetCarTypes()
+        {
+            try
+            {
+                string query = "SELECT DISTINCT CarType FROM Inventory ORDER BY CarType";
+
+                using (SqlConnection conn = new SqlConnection(connectionString))
+                {
+                    using (SqlDataAdapter adapter = new SqlDataAdapter(query, conn))
+                    {
+                        DataTable dt = new DataTable();
+                        adapter.Fill(dt);
+                        return dt;
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show("Error loading car types: " + ex.Message, "Database Error");
                 return new DataTable();
             }
         }
@@ -126,7 +307,7 @@ namespace MarcZen // Replace with your actual namespace
             }
             catch (Exception ex)
             {
-                MessageBox.Show("Error deleting record: " + ex.Message, "Database Error");
+                MessageBox.Show("Error deleting maintenance record: " + ex.Message, "Database Error");
                 return false;
             }
         }

@@ -42,12 +42,12 @@
             this.panel2 = new System.Windows.Forms.Panel();
             this.lblNameAdmin = new System.Windows.Forms.Label();
             this.label5 = new System.Windows.Forms.Label();
-            this.timerDate = new System.Windows.Forms.Timer(this.components);
             this.lblDate = new System.Windows.Forms.Label();
             this.flowLayoutPanel1 = new System.Windows.Forms.FlowLayoutPanel();
             this.comboBoxFilter = new System.Windows.Forms.ComboBox();
             this.btnSearch = new System.Windows.Forms.Button();
             this.label6 = new System.Windows.Forms.Label();
+            this.timerDate = new System.Windows.Forms.Timer(this.components);
             this.panel1.SuspendLayout();
             this.SuspendLayout();
             // 
@@ -281,11 +281,6 @@
             this.label5.TabIndex = 20;
             this.label5.Text = "Inventory";
             // 
-            // timerDate
-            // 
-            this.timerDate.Enabled = true;
-            this.timerDate.Interval = 1000;
-            // 
             // lblDate
             // 
             this.lblDate.AutoSize = true;
@@ -334,6 +329,11 @@
             this.label6.TabIndex = 26;
             this.label6.Text = "Filter:";
             // 
+            // timerDate
+            // 
+            this.timerDate.Enabled = true;
+            this.timerDate.Interval = 1000;
+            // 
             // Inventory
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
@@ -370,11 +370,11 @@
         private System.Windows.Forms.Panel panel2;
         private System.Windows.Forms.Label lblNameAdmin;
         private System.Windows.Forms.Label label5;
-        private System.Windows.Forms.Timer timerDate;
         private System.Windows.Forms.Label lblDate;
         private System.Windows.Forms.FlowLayoutPanel flowLayoutPanel1;
         private System.Windows.Forms.ComboBox comboBoxFilter;
         private System.Windows.Forms.Button btnSearch;
         private System.Windows.Forms.Label label6;
+        private System.Windows.Forms.Timer timerDate;
     }
 }

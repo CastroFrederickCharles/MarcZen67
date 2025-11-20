@@ -15,7 +15,8 @@ namespace MarcZen
             connectionString = ConfigurationManager.ConnectionStrings["MarcZenDB"].ConnectionString;
         }
 
-        // Test database connection
+        // ==================== GENERAL METHODS ====================
+
         public bool TestConnection()
         {
             try
@@ -47,22 +48,20 @@ namespace MarcZen
                                VALUES (@Date, @Description, @Vehicle, @Contact, @Material, @Labor, @Other, @Total)";
 
                 using (SqlConnection conn = new SqlConnection(connectionString))
+                using (SqlCommand cmd = new SqlCommand(query, conn))
                 {
-                    using (SqlCommand cmd = new SqlCommand(query, conn))
-                    {
-                        cmd.Parameters.AddWithValue("@Date", date);
-                        cmd.Parameters.AddWithValue("@Description", description);
-                        cmd.Parameters.AddWithValue("@Vehicle", vehicle);
-                        cmd.Parameters.AddWithValue("@Contact", contactNumber ?? "");
-                        cmd.Parameters.AddWithValue("@Material", material);
-                        cmd.Parameters.AddWithValue("@Labor", labor);
-                        cmd.Parameters.AddWithValue("@Other", other);
-                        cmd.Parameters.AddWithValue("@Total", total);
+                    cmd.Parameters.AddWithValue("@Date", date);
+                    cmd.Parameters.AddWithValue("@Description", description);
+                    cmd.Parameters.AddWithValue("@Vehicle", vehicle);
+                    cmd.Parameters.AddWithValue("@Contact", contactNumber ?? "");
+                    cmd.Parameters.AddWithValue("@Material", material);
+                    cmd.Parameters.AddWithValue("@Labor", labor);
+                    cmd.Parameters.AddWithValue("@Other", other);
+                    cmd.Parameters.AddWithValue("@Total", total);
 
-                        conn.Open();
-                        cmd.ExecuteNonQuery();
-                        return true;
-                    }
+                    conn.Open();
+                    cmd.ExecuteNonQuery();
+                    return true;
                 }
             }
             catch (Exception ex)
@@ -90,13 +89,11 @@ namespace MarcZen
                                ORDER BY Date DESC, CreatedDate DESC";
 
                 using (SqlConnection conn = new SqlConnection(connectionString))
+                using (SqlDataAdapter adapter = new SqlDataAdapter(query, conn))
                 {
-                    using (SqlDataAdapter adapter = new SqlDataAdapter(query, conn))
-                    {
-                        DataTable dt = new DataTable();
-                        adapter.Fill(dt);
-                        return dt;
-                    }
+                    DataTable dt = new DataTable();
+                    adapter.Fill(dt);
+                    return dt;
                 }
             }
             catch (Exception ex)
@@ -106,9 +103,30 @@ namespace MarcZen
             }
         }
 
+        public bool DeleteMaintenanceRecord(int maintenanceId)
+        {
+            try
+            {
+                string query = "DELETE FROM Maintenance WHERE MaintenanceID = @ID";
+
+                using (SqlConnection conn = new SqlConnection(connectionString))
+                using (SqlCommand cmd = new SqlCommand(query, conn))
+                {
+                    cmd.Parameters.AddWithValue("@ID", maintenanceId);
+                    conn.Open();
+                    cmd.ExecuteNonQuery();
+                    return true;
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show("Error deleting maintenance record: " + ex.Message, "Database Error");
+                return false;
+            }
+        }
+
         // ==================== INVENTORY METHODS ====================
 
-        // Load all inventory items
         public DataTable LoadInventory(string filterType = "All")
         {
             try
@@ -124,28 +142,22 @@ namespace MarcZen
                                 DailyRate,
                                 Status,
                                 ImagePath
-                               FROM Inventory";
+                                FROM Inventory";
 
                 if (filterType != "All")
-                {
                     query += " WHERE CarType = @FilterType";
-                }
 
                 query += " ORDER BY CarBrand, CarModel";
 
                 using (SqlConnection conn = new SqlConnection(connectionString))
+                using (SqlDataAdapter adapter = new SqlDataAdapter(query, conn))
                 {
-                    using (SqlDataAdapter adapter = new SqlDataAdapter(query, conn))
-                    {
-                        if (filterType != "All")
-                        {
-                            adapter.SelectCommand.Parameters.AddWithValue("@FilterType", filterType);
-                        }
+                    if (filterType != "All")
+                        adapter.SelectCommand.Parameters.AddWithValue("@FilterType", filterType);
 
-                        DataTable dt = new DataTable();
-                        adapter.Fill(dt);
-                        return dt;
-                    }
+                    DataTable dt = new DataTable();
+                    adapter.Fill(dt);
+                    return dt;
                 }
             }
             catch (Exception ex)
@@ -155,7 +167,6 @@ namespace MarcZen
             }
         }
 
-        // Insert new inventory item
         public bool InsertInventoryItem(string brand, string model, string type, int year,
             string color, string plateNumber, decimal dailyRate, string status, string imagePath)
         {
@@ -166,23 +177,21 @@ namespace MarcZen
                                VALUES (@Brand, @Model, @Type, @Year, @Color, @PlateNumber, @DailyRate, @Status, @ImagePath)";
 
                 using (SqlConnection conn = new SqlConnection(connectionString))
+                using (SqlCommand cmd = new SqlCommand(query, conn))
                 {
-                    using (SqlCommand cmd = new SqlCommand(query, conn))
-                    {
-                        cmd.Parameters.AddWithValue("@Brand", brand);
-                        cmd.Parameters.AddWithValue("@Model", model);
-                        cmd.Parameters.AddWithValue("@Type", type ?? "");
-                        cmd.Parameters.AddWithValue("@Year", year);
-                        cmd.Parameters.AddWithValue("@Color", color ?? "");
-                        cmd.Parameters.AddWithValue("@PlateNumber", plateNumber);
-                        cmd.Parameters.AddWithValue("@DailyRate", dailyRate);
-                        cmd.Parameters.AddWithValue("@Status", status);
-                        cmd.Parameters.AddWithValue("@ImagePath", imagePath ?? "");
+                    cmd.Parameters.AddWithValue("@Brand", brand);
+                    cmd.Parameters.AddWithValue("@Model", model);
+                    cmd.Parameters.AddWithValue("@Type", type ?? "");
+                    cmd.Parameters.AddWithValue("@Year", year);
+                    cmd.Parameters.AddWithValue("@Color", color ?? "");
+                    cmd.Parameters.AddWithValue("@PlateNumber", plateNumber);
+                    cmd.Parameters.AddWithValue("@DailyRate", dailyRate);
+                    cmd.Parameters.AddWithValue("@Status", status);
+                    cmd.Parameters.AddWithValue("@ImagePath", imagePath ?? "");
 
-                        conn.Open();
-                        cmd.ExecuteNonQuery();
-                        return true;
-                    }
+                    conn.Open();
+                    cmd.ExecuteNonQuery();
+                    return true;
                 }
             }
             catch (Exception ex)
@@ -192,7 +201,6 @@ namespace MarcZen
             }
         }
 
-        // Update inventory item
         public bool UpdateInventoryItem(int inventoryId, string brand, string model, string type,
             int year, string color, string plateNumber, decimal dailyRate, string status, string imagePath)
         {
@@ -211,24 +219,22 @@ namespace MarcZen
                                WHERE InventoryID = @ID";
 
                 using (SqlConnection conn = new SqlConnection(connectionString))
+                using (SqlCommand cmd = new SqlCommand(query, conn))
                 {
-                    using (SqlCommand cmd = new SqlCommand(query, conn))
-                    {
-                        cmd.Parameters.AddWithValue("@ID", inventoryId);
-                        cmd.Parameters.AddWithValue("@Brand", brand);
-                        cmd.Parameters.AddWithValue("@Model", model);
-                        cmd.Parameters.AddWithValue("@Type", type ?? "");
-                        cmd.Parameters.AddWithValue("@Year", year);
-                        cmd.Parameters.AddWithValue("@Color", color ?? "");
-                        cmd.Parameters.AddWithValue("@PlateNumber", plateNumber);
-                        cmd.Parameters.AddWithValue("@DailyRate", dailyRate);
-                        cmd.Parameters.AddWithValue("@Status", status);
-                        cmd.Parameters.AddWithValue("@ImagePath", imagePath ?? "");
+                    cmd.Parameters.AddWithValue("@ID", inventoryId);
+                    cmd.Parameters.AddWithValue("@Brand", brand);
+                    cmd.Parameters.AddWithValue("@Model", model);
+                    cmd.Parameters.AddWithValue("@Type", type ?? "");
+                    cmd.Parameters.AddWithValue("@Year", year);
+                    cmd.Parameters.AddWithValue("@Color", color ?? "");
+                    cmd.Parameters.AddWithValue("@PlateNumber", plateNumber);
+                    cmd.Parameters.AddWithValue("@DailyRate", dailyRate);
+                    cmd.Parameters.AddWithValue("@Status", status);
+                    cmd.Parameters.AddWithValue("@ImagePath", imagePath ?? "");
 
-                        conn.Open();
-                        cmd.ExecuteNonQuery();
-                        return true;
-                    }
+                    conn.Open();
+                    cmd.ExecuteNonQuery();
+                    return true;
                 }
             }
             catch (Exception ex)
@@ -238,7 +244,6 @@ namespace MarcZen
             }
         }
 
-        // Delete inventory item
         public bool DeleteInventoryItem(int inventoryId)
         {
             try
@@ -246,14 +251,12 @@ namespace MarcZen
                 string query = "DELETE FROM Inventory WHERE InventoryID = @ID";
 
                 using (SqlConnection conn = new SqlConnection(connectionString))
+                using (SqlCommand cmd = new SqlCommand(query, conn))
                 {
-                    using (SqlCommand cmd = new SqlCommand(query, conn))
-                    {
-                        cmd.Parameters.AddWithValue("@ID", inventoryId);
-                        conn.Open();
-                        cmd.ExecuteNonQuery();
-                        return true;
-                    }
+                    cmd.Parameters.AddWithValue("@ID", inventoryId);
+                    conn.Open();
+                    cmd.ExecuteNonQuery();
+                    return true;
                 }
             }
             catch (Exception ex)
@@ -263,7 +266,6 @@ namespace MarcZen
             }
         }
 
-        // Get car types for filter dropdown
         public DataTable GetCarTypes()
         {
             try
@@ -271,13 +273,11 @@ namespace MarcZen
                 string query = "SELECT DISTINCT CarType FROM Inventory ORDER BY CarType";
 
                 using (SqlConnection conn = new SqlConnection(connectionString))
+                using (SqlDataAdapter adapter = new SqlDataAdapter(query, conn))
                 {
-                    using (SqlDataAdapter adapter = new SqlDataAdapter(query, conn))
-                    {
-                        DataTable dt = new DataTable();
-                        adapter.Fill(dt);
-                        return dt;
-                    }
+                    DataTable dt = new DataTable();
+                    adapter.Fill(dt);
+                    return dt;
                 }
             }
             catch (Exception ex)
@@ -287,29 +287,80 @@ namespace MarcZen
             }
         }
 
-        // Delete maintenance record by ID
-        public bool DeleteMaintenanceRecord(int maintenanceId)
+        // ==================== STATUS METHODS (MERGED) ====================
+
+        public string GetCarStatus(int inventoryId)
         {
             try
             {
-                string query = "DELETE FROM Maintenance WHERE MaintenanceID = @ID";
+                string query = "SELECT Status FROM Inventory WHERE InventoryID = @ID";
 
                 using (SqlConnection conn = new SqlConnection(connectionString))
+                using (SqlCommand cmd = new SqlCommand(query, conn))
                 {
-                    using (SqlCommand cmd = new SqlCommand(query, conn))
-                    {
-                        cmd.Parameters.AddWithValue("@ID", maintenanceId);
-                        conn.Open();
-                        cmd.ExecuteNonQuery();
-                        return true;
-                    }
+                    cmd.Parameters.AddWithValue("@ID", inventoryId);
+                    conn.Open();
+
+                    object result = cmd.ExecuteScalar();
+                    return result?.ToString() ?? "Unknown";
                 }
             }
             catch (Exception ex)
             {
-                MessageBox.Show("Error deleting maintenance record: " + ex.Message, "Database Error");
+                MessageBox.Show("Error getting status: " + ex.Message, "Database Error");
+                return "Unknown";
+            }
+        }
+
+        public bool UpdateCarStatus(int inventoryId, string newStatus)
+        {
+            try
+            {
+                string query = "UPDATE Inventory SET Status = @Status WHERE InventoryID = @ID";
+
+                using (SqlConnection conn = new SqlConnection(connectionString))
+                using (SqlCommand cmd = new SqlCommand(query, conn))
+                {
+                    cmd.Parameters.AddWithValue("@ID", inventoryId);
+                    cmd.Parameters.AddWithValue("@Status", newStatus);
+
+                    conn.Open();
+                    cmd.ExecuteNonQuery();
+                    return true;
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show("Error updating status: " + ex.Message, "Database Error");
                 return false;
             }
         }
+        // Get maintenance record ID by vehicle name
+        public int? GetMaintenanceIDByVehicle(string vehicleName)
+        {
+            try
+            {
+                string query = "SELECT TOP 1 MaintenanceID FROM Maintenance WHERE Vehicle = @Vehicle ORDER BY CreatedDate DESC";
+                using (SqlConnection conn = new SqlConnection(connectionString))
+                {
+                    using (SqlCommand cmd = new SqlCommand(query, conn))
+                    {
+                        cmd.Parameters.AddWithValue("@Vehicle", vehicleName);
+                        conn.Open();
+                        object result = cmd.ExecuteScalar();
+                        if (result != null)
+                            return Convert.ToInt32(result);
+                        else
+                            return null;
+                    }
+                }
+            }
+            catch
+            {
+                return null;
+            }
+        }
+
     }
 }
+

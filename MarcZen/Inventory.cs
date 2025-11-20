@@ -77,6 +77,7 @@ namespace MarcZen
         }
 
         // Load inventory and display as cards
+        // Load inventory and display as cards
         private void LoadInventory(string filterType = "All")
         {
             try
@@ -95,10 +96,14 @@ namespace MarcZen
                         Convert.ToInt32(row["InventoryID"]),
                         row["CarBrand"].ToString(),
                         row["CarModel"].ToString(),
-                        row["ImagePath"].ToString()
+                        row["ImagePath"].ToString(),
+                        row["Status"].ToString()
                     );
 
-                    // Optional: Add click event to view details
+                    // Subscribe to status change event (RIGHT-CLICK)
+                    card.StatusChangeRequested += Card_StatusChangeRequested;
+
+                    // Subscribe to card click event (LEFT-CLICK)
                     card.CardClicked += Card_Clicked;
 
                     flowLayoutPanel1.Controls.Add(card);
@@ -122,24 +127,78 @@ namespace MarcZen
             }
         }
 
+        // Handle status change from right-click menu
+        // Inside Card_StatusChangeRequested in Inventory.cs
+
+        private void Card_StatusChangeRequested(object sender, StatusChangeEventArgs e)
+        {
+            try
+            {
+                DialogResult result = MessageBox.Show(
+                    $"Change status of {e.CarBrand} {e.CarModel} to '{e.NewStatus}'?",
+                    "Confirm Status Change",
+                    MessageBoxButtons.YesNo,
+                    MessageBoxIcon.Question);
+
+                if (result == DialogResult.Yes)
+                {
+                    bool success = dbHelper.UpdateCarStatus(e.InventoryID, e.NewStatus);
+
+                    if (success)
+                    {
+                        MessageBox.Show($"Status updated to '{e.NewStatus}' successfully!", "Success");
+
+                        if (e.NewStatus.ToLower() == "maintenance")
+                        {
+                            // Pass both Brand and Model to Maintenance form
+                            var maintenanceForm = new Maintenance(e.CarBrand + " " + e.CarModel);
+                            maintenanceForm.FormClosed += (s, args) => this.Show();
+                            this.Hide();
+                            maintenanceForm.Show();
+                        }
+
+                        LoadInventory(); // Refresh inventory display
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show("Error updating status: " + ex.Message, "Error");
+            }
+        }
+
+
+
         // Handle card click event
         private void Card_Clicked(object sender, EventArgs e)
         {
             CarCard card = sender as CarCard;
             if (card != null)
             {
-                MessageBox.Show(
-                    $"Vehicle Selected:\n\n" +
-                    $"Brand: {card.CarBrand}\n" +
-                    $"Model: {card.CarModel}\n" +
-                    $"ID: {card.InventoryID}",
-                    "Car Details",
-                    MessageBoxButtons.OK,
-                    MessageBoxIcon.Information);
+                if (card.Status.ToLower() == "maintenance")
+                {
+                    // Open Maintenance form with this vehicle pre-filled
+                    string vehicleFullName = card.CarBrand + " " + card.CarModel; // pass the vehicle name
+                    var maintenanceForm = new Maintenance(vehicleFullName);
+                    this.Hide();
+                    maintenanceForm.Show();
+                }
+                else
+                {
+                    MessageBox.Show(
+                        $"Vehicle Selected:\n\n" +
+                        $"Brand: {card.CarBrand}\n" +
+                        $"Model: {card.CarModel}\n" +
+                        $"ID: {card.InventoryID}",
+                        "Car Details",
+                        MessageBoxButtons.OK,
+                        MessageBoxIcon.Information);
+                }
             }
         }
 
-        
+
+
         private void btnSearch_Click(object sender, EventArgs e)
         {
             string selectedFilter = comboBoxFilter.SelectedItem?.ToString() ?? "All";

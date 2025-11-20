@@ -1,11 +1,6 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.ComponentModel;
 using System.Data;
 using System.Drawing;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using System.Windows.Forms;
 
 namespace MarcZen
@@ -13,32 +8,40 @@ namespace MarcZen
     public partial class Maintenance : Form
     {
         private DatabaseHelper dbHelper;
+        private string vehicleToHighlight;
 
-        public Maintenance()
+        public Maintenance(string vehicleName = "")
         {
             InitializeComponent();
             dbHelper = new DatabaseHelper();
+            vehicleToHighlight = vehicleName;
+
             SetupForm();
-            LoadDataFromDatabase(); // Load existing data from database
+            LoadDataFromDatabase();
+
+            // Pre-fill txtVehicle if provided (Brand + Model)
+            if (!string.IsNullOrEmpty(vehicleToHighlight))
+            {
+                txtVehicle.Text = vehicleToHighlight;
+                txtVehicle.Focus();
+            }
         }
 
         private void SetupForm()
         {
-            // Test database connection on startup
+            // Test database connection
             if (!dbHelper.TestConnection())
             {
-                MessageBox.Show("Failed to connect to database. Please check your connection settings.",
-                    "Database Connection Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                MessageBox.Show("Failed to connect to database.", "Database Connection Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
 
-            // Setup DataGridView appearance
+            // DataGridView settings
             dataGridView1.AllowUserToAddRows = false;
             dataGridView1.ReadOnly = true;
             dataGridView1.SelectionMode = DataGridViewSelectionMode.FullRowSelect;
             dataGridView1.MultiSelect = false;
         }
 
-        // Load data from database
         private void LoadDataFromDatabase()
         {
             try
@@ -54,6 +57,20 @@ namespace MarcZen
                     dataGridView1.Columns["Other"].DefaultCellStyle.Format = "₱#,##0.00";
                     dataGridView1.Columns["Total"].DefaultCellStyle.Format = "₱#,##0.00";
                 }
+
+                // Highlight a vehicle if set
+                if (!string.IsNullOrEmpty(vehicleToHighlight))
+                {
+                    foreach (DataGridViewRow row in dataGridView1.Rows)
+                    {
+                        if (row.Cells["Vehicle"].Value.ToString() == vehicleToHighlight)
+                        {
+                            row.Selected = true;
+                            dataGridView1.FirstDisplayedScrollingRowIndex = row.Index;
+                            break;
+                        }
+                    }
+                }
             }
             catch (Exception ex)
             {
@@ -63,7 +80,6 @@ namespace MarcZen
 
         private void MarcZen_Load(object sender, EventArgs e)
         {
-            // Start the timer on load
             Timer timer = new Timer();
             timer.Interval = 1000; // 1 second
             timer.Tick += Timer_Tick;
@@ -73,8 +89,7 @@ namespace MarcZen
 
         private void UpdateDateTimeLabel()
         {
-            DateTime now = DateTime.Now; // local system time
-            lblDate.Text = now.ToString("dddd, MMMM dd yyyy  |  hh:mm tt");
+            lblDate.Text = DateTime.Now.ToString("dddd, MMMM dd yyyy  |  hh:mm tt");
         }
 
         private void Timer_Tick(object sender, EventArgs e)
@@ -87,78 +102,73 @@ namespace MarcZen
             UpdateDateTimeLabel();
         }
 
+        // Navigation buttons (Dashboard, Inventory, Rental, etc.)
         private void btnDashboard_Click(object sender, EventArgs e)
         {
-            var form1 = new Dashboard();
-            form1.FormClosed += (s, args) => this.Close();
+            var form = new Dashboard();
+            form.FormClosed += (s, args) => this.Close();
             this.Hide();
-            form1.Show();
+            form.Show();
         }
 
         private void btnInventory_Click(object sender, EventArgs e)
         {
-            var form2 = new Inventory();
-            form2.FormClosed += (s, args) => this.Close();
+            var form = new Inventory();
+            form.FormClosed += (s, args) => this.Close();
             this.Hide();
-            form2.Show();
+            form.Show();
         }
 
         private void btnRentalTransaction_Click(object sender, EventArgs e)
         {
-            var form3 = new RentalTransaction();
-            form3.FormClosed += (s, args) => this.Close();
+            var form = new RentalTransaction();
+            form.FormClosed += (s, args) => this.Close();
             this.Hide();
-            form3.Show();
+            form.Show();
         }
 
         private void btnCustomers_Click(object sender, EventArgs e)
         {
-            var form5 = new Customers();
-            form5.FormClosed += (s, args) => this.Close();
+            var form = new Customers();
+            form.FormClosed += (s, args) => this.Close();
             this.Hide();
-            form5.Show();
+            form.Show();
         }
 
         private void btnReports_Click(object sender, EventArgs e)
         {
-            var form6 = new Reports();
-            form6.FormClosed += (s, args) => this.Close();
+            var form = new Reports();
+            form.FormClosed += (s, args) => this.Close();
             this.Hide();
-            form6.Show();
+            form.Show();
         }
 
         private void btnPayments_Click(object sender, EventArgs e)
         {
-            var form7 = new Payments();
-            form7.FormClosed += (s, args) => this.Close();
+            var form = new Payments();
+            form.FormClosed += (s, args) => this.Close();
             this.Hide();
-            form7.Show();
+            form.Show();
         }
 
         private void btnLogout_Click(object sender, EventArgs e)
         {
-            var form8 = new Login();
-            form8.FormClosed += (s, args) => this.Close();
+            var form = new Login();
+            form.FormClosed += (s, args) => this.Close();
             this.Hide();
-            form8.Show();
+            form.Show();
         }
 
-        private void textBox6_TextChanged(object sender, EventArgs e)
-        {
-
-        }
-
+        // Add maintenance record
         private void btnAdd_Click(object sender, EventArgs e)
         {
             try
             {
-                // Get values from input controls
                 DateTime date = dateTimePicker1.Value;
                 string description = txtDescription.Text.Trim();
                 string vehicle = txtVehicle.Text.Trim();
                 string contact = txtContact.Text.Trim();
 
-                // Validate inputs
                 if (string.IsNullOrEmpty(description))
                 {
                     MessageBox.Show("Please enter a maintenance description.", "Validation Error");
@@ -173,41 +183,36 @@ namespace MarcZen
                     return;
                 }
 
-                // Parse decimal values (with validation)
-                decimal material = 0;
-                decimal labor = 0;
-                decimal other = 0;
+                decimal material = 0, labor = 0, other = 0;
 
                 if (!string.IsNullOrEmpty(txtMaterial.Text) && !decimal.TryParse(txtMaterial.Text, out material))
                 {
-                    MessageBox.Show("Please enter a valid number for Material cost.", "Validation Error");
+                    MessageBox.Show("Invalid Material cost.", "Validation Error");
                     txtMaterial.Focus();
                     return;
                 }
 
                 if (!string.IsNullOrEmpty(txtLabor.Text) && !decimal.TryParse(txtLabor.Text, out labor))
                 {
-                    MessageBox.Show("Please enter a valid number for Labor cost.", "Validation Error");
+                    MessageBox.Show("Invalid Labor cost.", "Validation Error");
                     txtLabor.Focus();
                     return;
                 }
 
                 if (!string.IsNullOrEmpty(txtOther.Text) && !decimal.TryParse(txtOther.Text, out other))
                 {
-                    MessageBox.Show("Please enter a valid number for Other cost.", "Validation Error");
+                    MessageBox.Show("Invalid Other cost.", "Validation Error");
                     txtOther.Focus();
                     return;
                 }
 
-                // Insert into database
-                bool success = dbHelper.InsertMaintenanceRecord(date, description, vehicle,
-                    contact, material, labor, other);
+                bool success = dbHelper.InsertMaintenanceRecord(date, description, vehicle, contact, material, labor, other);
 
                 if (success)
                 {
                     MessageBox.Show("Maintenance record added successfully!", "Success");
                     ClearInputs();
-                    LoadDataFromDatabase(); // Refresh the grid
+                    LoadDataFromDatabase();
                 }
             }
             catch (Exception ex)
@@ -237,40 +242,34 @@ namespace MarcZen
         {
             if (dataGridView1.SelectedRows.Count == 0)
             {
-                MessageBox.Show("Select a row first.", "No Selection");
+                MessageBox.Show("Select a record first.", "No Selection");
                 return;
             }
-            DialogResult result = MessageBox.Show(
-                        "Are you sure you want to delete this record?",
-                        "Confirm Delete",
-                MessageBoxButtons.YesNo,
-                MessageBoxIcon.Warning);
 
+            DialogResult result = MessageBox.Show("Are you sure you want to delete this record?", "Confirm Delete", MessageBoxButtons.YesNo, MessageBoxIcon.Warning);
             if (result != DialogResult.Yes) return;
 
-            int id = Convert.ToInt32(
-                dataGridView1.SelectedRows[0].Cells["MaintenanceID"].Value);
-
+            int id = Convert.ToInt32(dataGridView1.SelectedRows[0].Cells["MaintenanceID"].Value);
             bool success = dbHelper.DeleteMaintenanceRecord(id);
 
             if (success)
             {
-                MessageBox.Show("Deleted.");
+                MessageBox.Show("Deleted successfully.", "Deleted");
                 LoadDataFromDatabase();
             }
-
         }
-    }
-    }
 
-
-        // Optional: Add refresh button functionality
- /*       private void btnRefresh_Click(object sender, EventArgs e)
+        // Highlight a vehicle manually from other forms
+        public void HighlightVehicle(string vehicleName)
         {
+            vehicleToHighlight = vehicleName;
             LoadDataFromDatabase();
-            MessageBox.Show("Data refreshed!", "Success");
+
+            // Pre-fill txtVehicle when highlighting
+            if (!string.IsNullOrEmpty(vehicleToHighlight))
+            {
+                txtVehicle.Text = vehicleToHighlight;
+            }
         }
     }
 }
-
-*/                         
